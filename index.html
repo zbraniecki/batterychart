@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+	  <link href="./css/example.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="./vendor/jquery.js"></script>
+    <script type="text/javascript" src="./vendor/flot/jquery.flot.js"></script>
+    <script type="text/javascript" src="./js/battery.js"></script>
+    <script type="text/javascript" src="./js/usage.js"></script>
+  </head>
+  <body>
+
+    <p id="est">77% - approx. 5 hrs left</p>
+
+		<div class="demo-container">
+			<div id="placeholder" class="demo-placeholder"></div>
+		</div>
+
+    <button id="clear">clear cache</button>
+
+<dl>
+<dt>Cellular signal</dt>
+<dd>
+  <canvas id="canvasbar-cellular" class="stackbar" width="1000" height="1">
+  </canvas>
+</dd>
+<dt>GPS on</dt>
+<dd>
+  <canvas id="canvasbar-wifi" class="stackbar" width="1000" height="1">
+  </canvas>
+</dd>
+<dt>Wi-Fi</dt>
+<dd></dd>
+<dt>Awake</dt>
+<dd></dd>
+<dt>Screen on</dt>
+<dd></dd>
+<dt>Charging</dt>
+<dd></dd>
+</dl>
+  </body>
+</html>
