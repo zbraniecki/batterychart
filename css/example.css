@@ -35,3 +35,7 @@ path.area.estimationLine {
 .stackedbar {
   fill: #EAEFF2 ;
 }
+
+.bb {
+  fill: 'orange';
+}
