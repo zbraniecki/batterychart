@@ -1,73 +1,111 @@
 (function(window) {
 
-  		var data = [3, 6, 2, 7, 5, 2, 1, 3, 8, 9, 2, 5, 7],
-			w = 400,
-			h = 200,
-			margin = 20,
-			y = d3.scale.linear().domain([0, d3.max(data)]).range([0 + margin, h - margin]),
-			x = d3.scale.linear().domain([0, data.length]).range([0 + margin, w - margin])
+function BatteryChart(data) {
+  this.svg = null;
+  this.height = 250;
+  this.width = 450;
+  this.x = null;
+  this.y = null;
+  this.margin = {top: 20, right: 20, bottom: 30, left: 60};
+  this.data = data;
+}
 
-			var vis = d3.select("body")
-			    .append("svg:svg")
-			    .attr("width", w)
-			    .attr("height", h)
+BatteryChart.prototype.draw = function() {
 
-			var g = vis.append("svg:g")
-			    .attr("transform", "translate(0, 200)");
-			
-			var line = d3.svg.line()
-			    .x(function(d,i) { return x(i); })
-			    .y(function(d) { return -1 * y(d); })
-			
-			g.append("svg:path").attr("d", line(data));
-			
-			g.append("svg:line")
-			    .attr("x1", x(0))
-			    .attr("y1", -1 * y(0))
-			    .attr("x2", x(w))
-			    .attr("y2", -1 * y(0))
+  var height = this.height + (this.data.usage.length * 20);
 
-			g.append("svg:line")
-			    .attr("x1", x(0))
-			    .attr("y1", -1 * y(0))
-			    .attr("x2", x(0))
-			    .attr("y2", -1 * y(d3.max(data)))
-			
-			g.selectAll(".xLabel")
-			    .data(x.ticks(5))
-			    .enter().append("svg:text")
-			    .attr("class", "xLabel")
-			    .text(String)
-			    .attr("x", function(d) { return x(d) })
-			    .attr("y", 0)
-			    .attr("text-anchor", "middle")
+  this.svg = d3.select("body").append("svg")
+    .attr("width", this.width + this.margin.left + this.margin.right)
+    .attr("height", height + this.margin.top + this.margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + this.margin.left + "," + this.margin.top + ")");
 
-			g.selectAll(".yLabel")
-			    .data(y.ticks(4))
-			    .enter().append("svg:text")
-			    .attr("class", "yLabel")
-			    .text(String)
-			    .attr("x", 0)
-			    .attr("y", function(d) { return -1 * y(d) })
-			    .attr("text-anchor", "right")
-			    .attr("dy", 4)
-			
-			g.selectAll(".xTicks")
-			    .data(x.ticks(5))
-			    .enter().append("svg:line")
-			    .attr("class", "xTicks")
-			    .attr("x1", function(d) { return x(d); })
-			    .attr("y1", -1 * y(0))
-			    .attr("x2", function(d) { return x(d); })
-			    .attr("y2", -1 * y(-0.3))
+  drawAxis.call(this);
+  drawLevel.call(this);
+  drawEstimation.call(this);
+  drawUsageBars.call(this);
+}
 
-			g.selectAll(".yTicks")
-			    .data(y.ticks(4))
-			    .enter().append("svg:line")
-			    .attr("class", "yTicks")
-			    .attr("y1", function(d) { return -1 * y(d); })
-			    .attr("x1", x(-0.3))
-			    .attr("y2", function(d) { return -1 * y(d); })
-			    .attr("x2", x(0))
+function drawLevel() {
+  drawArea.call(this, this.data.levelHistory, 'levelLine');
+}
 
+function drawEstimation() {
+  var estimationDatum = [this.data.levelHistory[this.data.levelHistory.length - 1]];
+
+  estimationDatum.push([new Date().getTime() + this.data.estimations.discharge,0]);
+
+  drawArea.call(this, estimationDatum, 'estimationLine');
+}
+
+function drawArea(data, name) {
+  var line = d3.svg.line()
+    .x(d => this.x(d[0]))
+    .y(d => this.y(d[1]));
+
+  var area = d3.svg.area()
+    .x(d => this.x(d[0]))
+    .y0(this.height)
+    .y1(d => this.y(d[1]));
+
+  this.svg.append("path")
+    .datum(data)
+    .attr("class", 'area ' + name)
+    .attr("d", area);
+
+  this.svg.append("path")
+    .datum(data)
+    .attr("class", 'line ' + name)
+    .attr("d", line);
+}
+
+function drawAxis() {
+  this.x = d3.time.scale()
+    .range([0, this.width]);
+
+  this.y = d3.scale.linear()
+    .range([this.height, 0]);
+
+  var xAxis = d3.svg.axis()
+    .scale(this.x)
+    .orient("bottom");
+
+  var yAxis = d3.svg.axis()
+    .scale(this.y)
+    .tickFormat(d3.format('%'))
+    .orient("left");
+
+  var min = d3.min(this.data.levelHistory, function(d) { return d[0]; });
+  var max = d3.max(this.data.levelHistory, function(d) { return d[0]; });
+  this.x.domain([min, max + (8 * 60 * 60 * 1000)]);
+
+  this.svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + this.height + ")")
+    .call(xAxis);
+
+  this.svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis)
+}
+
+function drawUsageBars() {
+
+  this.data.usage.forEach(function(usage, i) {
+    this.svg.append('rect')
+      .attr('width', this.width)
+      .attr('height', 15)
+      .attr('x', 0)
+      .attr('y', this.height + 20 + (i * 20))
+      .attr('class', 'stackedbar');
+
+    this.svg.append("text")
+      .attr("x", -50)
+      .attr("y", this.height + 28 + (i * 20))
+      .attr("dy", ".35em")
+      .text(usage.label);
+  }, this);
+}
+
+window.BatteryChart = BatteryChart;
 })(this);

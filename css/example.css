@@ -1,46 +1,37 @@
-
-.demo-container {
-	width: 450px;
-	height: 250px;
+svg {
+  border: 1px solid black;
 }
 
-.demo-placeholder {
-	width: 100%;
-	height: 100%;
-	font-size: 14px;
-	line-height: 1.2em;
+body {
+  font: 10px sans-serif;
 }
 
-dl {
-  padding: 0;
-  margin: 0;
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
 }
 
-dd {
-  padding: 0;
-  margin: 0;
-  margin-left: 23px;
+path.area.levelLine {
+  fill: #FF9500;
 }
 
-.stackbar {
-  width: 412px;
-  height: 10px;
-  padding: 0;
-  margin: 0;
+path.line.levelLine {
+  fill: none;
+  stroke: #E66000;
+  stroke-width: 1.5px;
 }
 
+path.line.estimationLine {
+  fill: none;
+  stroke: #4D4E53;
+  stroke-width: 1.5px;
+}
 
-	path {
-		    stroke: steelblue;
-		    stroke-width: 2;
-		    fill: none;
-		}
-
-		line {
-		    stroke: black;
-		}
-
-		text {
-		    font-family: Arial;
-		    font-size: 9pt;
-		}
+path.area.estimationLine {
+  fill: #EAEFF2 ;
+}
+.stackedbar {
+  fill: #EAEFF2 ;
+}
