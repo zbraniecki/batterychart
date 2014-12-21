@@ -1,9 +1,18 @@
 svg {
   border: 1px solid black;
+  width: 100%;
+}
+
+p {
+  font: 40px sans-serif;
 }
 
 body {
-  font: 10px sans-serif;
+  font: 30px sans-serif;
+}
+
+.sb-text {
+  font: 20px sans-serif;
 }
 
 .axis path,
