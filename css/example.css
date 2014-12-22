@@ -1,18 +1,17 @@
 svg {
-  border: 1px solid black;
   width: 100%;
 }
 
-p {
-  font: 40px sans-serif;
+#chart p {
+  font: 20px sans-serif;
 }
 
-body {
-  font: 30px sans-serif;
+#chart {
+  font: 12px sans-serif;
 }
 
 .sb-text {
-  font: 20px sans-serif;
+  font: 10px sans-serif;
 }
 
 .axis path,
@@ -48,3 +47,4 @@ path.area.estimationLine {
 .bb {
   fill: 'orange';
 }
+

@@ -2,10 +2,14 @@
 
 function BatteryChart(data) {
   this.svg = null;
-  this.height = 650;
-  this.width = 800;
-  this.margin = {top: 20, right: 20, bottom: 30, left: 100};
+  this.height = 100;
+  this.width = 250;
+  this.margin = {top: 20, right: 20, bottom: 30, left: 50};
   this.data = data;
+
+  this.stackbar = {
+    height: 20,
+  }
 
   this.x = d3.time.scale()
     .range([0, this.width]);
@@ -33,32 +37,21 @@ function BatteryChart(data) {
     .y0(this.height)
     .y1(d => this.y(d[1]));
 
-  var min = d3.min(this.data.levelHistory, function(d) { return d[0]; });
-  var max = d3.max(this.data.levelHistory, function(d) { return d[0]; });
-
-  var now = new Date();
-  now.setMinutes(0);
-  now.setSeconds(0, 0);
-  now = now.getTime();
-
-  this.slice = {
-    start: now - (14 * 60 * 60 * 1000),
-    end: now - (2 * 60 * 60 * 1000),
-  };
+  calculateInitialSlice.call(this);
 }
 
 BatteryChart.prototype.draw = function() {
 
-  var height = this.height + (this.data.usage.length * 80);
+  var height = this.height + (this.data.usage.length * (this.stackbar.height + 4));
 
   var zoom = d3.behavior.drag()
     .on("drag", function(e, i) {
       updateChunk.call(this, d3.event.dx);
-    drawAxis.call(this);
-    drawArea.call(this, this.data.levelHistory);
+      drawAxis.call(this);
+      drawArea.call(this, this.data.levelHistory);
     }.bind(this));
 
-  this.svg = d3.select("body").append("svg")
+  this.svg = d3.select("#chart").append("svg")
     .attr("width", this.width + this.margin.left + this.margin.right)
     .attr("height", height + this.margin.top + this.margin.bottom)
     .call(zoom)
@@ -78,6 +71,45 @@ BatteryChart.prototype.draw = function() {
   drawLevel.call(this);
   //drawEstimation.call(this);
   drawUsageBars.call(this);
+}
+
+function calculateInitialSlice() {
+
+  var lastFullCharge = null;
+
+  for(var i = this.data.levelHistory.length - 1; i > 0; i--) {
+    if (this.data.levelHistory[i][1] === 1) {
+      lastFullCharge = this.data.levelHistory[i][0];
+      break;
+    }
+  }
+
+  var min = d3.min(this.data.levelHistory, function(d) { return d[0]; });
+  var max = d3.max(this.data.levelHistory, function(d) { return d[0]; });
+
+  var now = new Date();
+  now.setMinutes(0);
+  now.setSeconds(0, 0);
+  now = now.getTime();
+
+  this.slice = {
+    start: now - (14 * 60 * 60 * 1000),
+    end: now - (2 * 60 * 60 * 1000),
+  };
+
+  /*if (lastFullCharge) {
+    this.slice = {
+      start: lastFullCharge - (10 * 60 * 60 * 1000),
+      end: lastFullCharge + (15 * 60 * 60 * 1000)
+    };
+    console.log(this.slice);
+  } else {
+    var lastData = this.data.levelHistory[this.data.levelHistory.length - 1];
+    this.slice = {
+      start: lastData[0] - (8 * 60 * 60 * 1000),
+      end: lastData[0]
+    };
+  }*/
 }
 
 function updateChunk(dx) {
@@ -192,17 +224,17 @@ function drawUsageBars() {
   this.data.usage.forEach(function(usage, i) {
     
     var x = 0;
-    var y = this.height + 30 + (i * 80);
+    var y = this.height + 30 + (i * (this.stackbar.height + 4));
     this.svg.append('rect')
       .attr('width', this.width)
-      .attr('height', 70)
+      .attr('height', this.stackbar.height)
       .attr('x', x)
       .attr('y', y)
       .attr('class', 'stackedbar');
 
     this.svg.append("text")
-      .attr("x", -95)
-      .attr("y", y + 36)
+      .attr("x", -1 * (this.stackbar.height + 23))
+      .attr("y", y + 12)
       .attr("dy", ".35em")
       .attr('class', 'sb-text')
       .text(usage.label);
