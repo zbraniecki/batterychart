@@ -203,6 +203,40 @@ function getDataChunk(data) {
   return prefix.concat(data.slice(start, end), postfix);
 }
 
+function getStackBarDataChunk(data) {
+  var start = data.findIndex(function(d) {
+    return d[0] >= this.slice.start;
+  }, this);
+
+
+  var end = data.length;
+
+  var i = start;
+  while (++i < data.length) {
+    if (data[i][1] > this.slice.end) {
+      end = i;
+      break;
+    }
+  }
+
+  var prefix = [];
+  var postfix = [];
+  if (start > 0 && data[start - 1][1] > this.slice.start) {
+    prefix.push([
+      this.slice.start,
+      data[start - 1][1]
+    ]);
+  }
+
+  if (end < data.length && data[end][0] < this.slice.end) {
+    postfix.push([
+      data[end][0],
+      this.slice.end
+    ]);
+  }
+  return prefix.concat(data.slice(start, end), postfix);
+}
+
 
 
 function drawArea(data, name) {
@@ -223,6 +257,8 @@ function drawUsageBars() {
 
   this.data.usage.forEach(function(usage, i) {
     
+    var data = getStackBarDataChunk.call(this, usage.data);
+
     var x = 0;
     var y = this.height + 30 + (i * (this.stackbar.height + 4));
     this.svg.append('rect')
@@ -241,13 +277,13 @@ function drawUsageBars() {
 
 
     var rects = this.svg.selectAll("rect.sb-" + usage.id)
-      .data(usage.data)
+      .data(data)
       .enter()
       .append("rect")
       .attr('x', d => this.x(d[0]))
       .attr('y', y)
       .attr('width', d => this.x(d[1]) - this.x(d[0]))
-      .attr('height', 30)
+      .attr('height', this.stackbar.height)
       .attr('class', 'sb-' + usage.id);
 
   }, this);
