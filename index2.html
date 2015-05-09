@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script>
+function init(battery) {
+  updateStatuses(battery);
+  battery.addEventListener('chargingchange', function() {
+    statusChange('charging', battery.charging);
+    updateStatuses(battery);
+  });
+  battery.addEventListener('levelchange', function() {
+    statusChange('level', battery.level);
+    updateStatuses(battery);
+  });
+  battery.addEventListener('chargingtimechange', function() {
+    statusChange('chargingTime', battery.chargingTime);
+    updateStatuses(battery);
+  });
+  battery.addEventListener('dischargingtimechange', function() {
+    statusChange('dischargingTime', battery.dischargingTime);
+    updateStatuses(battery);
+  });
+}
+function start() {
+  if (navigator.battery) {
+    init(navigator.battery);
+  } else {
+    navigator.getBattery().then(function(battery) {
+      init(battery);
+    });
+  }
+}
+
+ function getTimestamp(date) {
+ var chunks = [
+ date.getFullYear(),
+ date.getMonth(),
+ date.getDate(),
+ date.getHours(),
+ date.getMinutes()
+ ];
+
+ return chunks.map(function(c) {
+   return c < 10 ? '0' + c : c.toString();
+ }).join('');
+}
+
+function statusChange(type, newValue) {
+  var timeStamp = getTimestamp(new Date());
+  var logLine = '[' + timeStamp + ']['+type+'] ' + newValue.toString();
+  document.getElementById('log').textContent +=
+    logLine + '\n';
+}
+
+function updateStatuses(battery) {
+  document.getElementById('charging').value = battery.charging ? 'yes': 'no';
+  document.getElementById('level').value = battery.level;
+  document.getElementById('chargingTime').value = battery.chargingTime;
+  document.getElementById('dischargingTime').value = battery.dischargingTime;
+}
+
+    </script>
+  </head>
+  <body>
+    <button onclick="start()">start</button>
+    <p>Charging: <input type="text" id="charging"/></p>
+    <p>Level: <input type="text" id="level"/></p>
+    <p>chargingTime: <input type="text" id="chargingTime"/></p>
+    <p>dischargingTime: <input type="text" id="dischargingTime"/></p>
+    <textarea id="log" style="width: 300px; height: 400px"></textarea>
+  </body>
+</html>

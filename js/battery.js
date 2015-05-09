@@ -3,9 +3,11 @@ now.setMinutes(0);
 now.setSeconds(0, 0);
 now = now.getTime();
 
+// https://developer.mozilla.org/en-US/docs/Web/API/Data_Store_API/Using_the_Data_Store_API
+
 var batteryData = {
   levelHistory: [
-    [now - (38 * 60 * 60 * 1000),0.4],
+/*    [now - (38 * 60 * 60 * 1000),0.4],
     [now - (37 * 60 * 60 * 1000),0.7],
     [now - (36 * 60 * 60 * 1000),0.6],
     [now - (35 * 60 * 60 * 1000),0.7],
@@ -42,12 +44,14 @@ var batteryData = {
     [now - (4 * 60 * 60 * 1000),0.7],
     [now - (3 * 60 * 60 * 1000),0.7],
     [now - (2 * 60 * 60 * 1000),0.9],
-    [now - (60 * 60 * 1000),1],
-    [now,0.5]
+    [now - (60 * 60 * 1000),1],*/
+
+    [now - (7 * 60 * 60 * 1000),0.5],
+    [now, navigator.battery.level],
   ],
   estimations: {
-    discharge: 7200000,
-    charge: 3600000,
+    discharge: 0,
+    charge: 0,
   },
   charging: false,
   usage: [
@@ -55,39 +59,72 @@ var batteryData = {
       'id': 'signal',
       'label': 'Signal',
       'data': [
-        [now - (15 * 60 * 60 * 1000), now - (12 * 60 * 60 * 1000)],
-        [now - (10 * 60 * 60 * 1000), now - (9 * 60 * 60 * 1000)],
+        //[now - (15 * 60 * 60 * 1000), now - (12 * 60 * 60 * 1000)],
+        //[now - (10 * 60 * 60 * 1000), now - (9 * 60 * 60 * 1000)],
         [now - (8 * 60 * 60 * 1000), now - (6 * 60 * 60 * 1000)], 
-        [now - (5 * 60 * 60 * 1000), now - (4 * 60 * 60 * 1000)],  
-        [now - (3.5 * 60 * 60 * 1000), now - (1 * 60 * 60 * 1000)]   
+        //[now - (5 * 60 * 60 * 1000), now - (4 * 60 * 60 * 1000)],  
+        //[now - (3.5 * 60 * 60 * 1000), now - (1 * 60 * 60 * 1000)]   
       ]
     },
     /*{
       'id': 'wifi',
       'label': 'Wi-Fi',
       'data': [
-        [now - (30 * 60 * 1000), now]  
+        [now - (10 * 60 * 60 * 1000), now - (9 * 60 * 60 * 1000)],
+        [now - (5 * 60 * 60 * 1000), now - (4 * 60 * 60 * 1000)],  
+        [now - (3.5 * 60 * 60 * 1000), now - (1 * 60 * 60 * 1000)]   
       ]
     },
     {
       'id': 'screen',
       'label': 'Screen',
       'data': [
-        [now - (30 * 60 * 1000), now]  
+        [now - (5 * 60 * 60 * 1000), now - (4 * 60 * 60 * 1000)],  
+        [now - (3.5 * 60 * 60 * 1000), now - (1 * 60 * 60 * 1000)]   
       ]
     },
     {
       'id': 'charging',
       'label': 'Charging',
       'data': [
-        [now - (30 * 60 * 1000), now]  
+        [now - (15 * 60 * 60 * 1000), now - (12 * 60 * 60 * 1000)],
+        [now - (10 * 60 * 60 * 1000), now - (9 * 60 * 60 * 1000)],
       ]
     }*/
   ]
 };
 
+var batteryChart;
 document.addEventListener('DOMContentLoaded', function() {
-  var batteryChart = new BatteryChart(batteryData);
-
+  batteryChart = new BatteryChart(batteryData);
+  batteryData.estimations.discharge = navigator.battery.dischargingTime * 1000;
+  batteryData.estimations.charge = navigator.battery.chargingTime * 1000;
+  batteryData.charging = navigator.battery.charging;
   batteryChart.draw();
+  init();
 });
+
+function redraw() {
+  batteryChart.draw();
+}
+
+function init() {
+  console.log('init');
+  navigator.battery.addEventListener('dischargingtimechange', function() {
+    console.log('dischargingtimechange');
+    batteryData.estimations.discharge = navigator.battery.dischargingTime * 1000;
+    batteryChart.draw();
+  });
+
+  navigator.battery.addEventListener('chargingtimechange', function() {
+    console.log('chargingtimechange');
+    batteryData.estimations.charge = navigator.battery.chargingTime * 1000;
+    batteryChart.draw();
+  });
+
+  navigator.battery.addEventListener('chargingchange', function() {
+    console.log('chargingchange');
+    batteryData.charging = navigator.battery.charging;
+    batteryChart.draw();
+  });
+}

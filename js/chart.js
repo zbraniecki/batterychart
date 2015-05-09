@@ -40,8 +40,7 @@ function BatteryChart(data) {
   calculateInitialSlice.call(this);
 }
 
-BatteryChart.prototype.draw = function() {
-
+BatteryChart.prototype.buildDOM = function() {
   var height = this.height + (this.data.usage.length * (this.stackbar.height + 4));
 
   var zoom = d3.behavior.drag()
@@ -49,6 +48,7 @@ BatteryChart.prototype.draw = function() {
       updateChunk.call(this, d3.event.dx);
       drawAxis.call(this);
       drawArea.call(this, this.data.levelHistory);
+      drawUsageBars.call(this);
     }.bind(this));
 
   this.svg = d3.select("#chart").append("svg")
@@ -68,9 +68,38 @@ BatteryChart.prototype.draw = function() {
     .attr("class", "y axis")
     .call(this.yAxis);
 
+  this.data.usage.forEach(function(usage, i) {
+    var x = 0;
+    var y = this.height + 30 + (i * (this.stackbar.height + 4));
+    this.svg.append('rect')
+      .attr('width', this.width)
+      .attr('height', this.stackbar.height)
+      .attr('x', x)
+      .attr('y', y)
+      .attr('class', 'stackedbar');
+
+    this.svg.append("text")
+      .attr("x", -1 * (this.stackbar.height + 23))
+      .attr("y", y + 12)
+      .attr("dy", ".35em")
+      .attr('class', 'sb-text')
+      .text(usage.label);
+  }, this);
+
+  this.svg.append("path").attr("class", 'area levelLine');
+  this.svg.append("path").attr("class", 'line levelLine');
+  this.svg.append("path").attr("class", 'area estimationLine');
+  this.svg.append("path").attr("class", 'line estimationLine');
+}
+
+BatteryChart.prototype.draw = function() {
+  if (!this.svg) {
+    this.buildDOM();
+  }
+
   drawLevel.call(this);
-  //drawEstimation.call(this);
-  drawUsageBars.call(this);
+  drawEstimation.call(this);
+  //drawUsageBars.call(this);
 }
 
 function calculateInitialSlice() {
@@ -93,8 +122,8 @@ function calculateInitialSlice() {
   now = now.getTime();
 
   this.slice = {
-    start: now - (14 * 60 * 60 * 1000),
-    end: now - (2 * 60 * 60 * 1000),
+    start: now - (7 * 60 * 60 * 1000),
+    end: now + (12 * 60 * 60 * 1000),
   };
 
   /*if (lastFullCharge) {
@@ -141,30 +170,32 @@ function updateChunk(dx) {
 function drawLevel() {
   var data = getDataChunk.call(this, this.data.levelHistory);
 
-  this.svg.append("path")
-    .datum(data)
-    .attr("class", 'area ' + 'levelLine')
-    .attr("d", this.area)
-
-  this.svg.append("path")
-    .datum(data)
-    .attr("class", 'line ' + 'levelLine')
-    .attr("d", this.line);
+  drawArea.call(this, data, 'levelLine');
 }
 
 function drawEstimation() {
   var estimationDatum = [this.data.levelHistory[this.data.levelHistory.length - 1]];
 
-  estimationDatum.push([new Date().getTime() + this.data.estimations.discharge,0]);
+  if (this.data.charging) {
+    if (this.data.estimations.charge !== Infinity &&
+        this.data.estimations.charge !== 0) {
+      estimationDatum.push([new Date().getTime() + this.data.estimations.charge,1]);
+    }
+  } else {
+    if (this.data.estimations.discharge !== Infinity &&
+        this.data.estimations.discharge !== 0) {
+      estimationDatum.push([new Date().getTime() + this.data.estimations.discharge,0]);
+    }
+  }
 
   drawArea.call(this, estimationDatum, 'estimationLine');
 }
 
 function getDataChunk(data) {
+  return data;
   var start = data.findIndex(function(d) {
     return d[0] >= this.slice.start;
   }, this);
-
 
   var end = data.length - 1;
 
@@ -208,6 +239,9 @@ function getStackBarDataChunk(data) {
     return d[0] >= this.slice.start;
   }, this);
 
+  if (start === -1) {
+    return [];
+  }
 
   var end = data.length;
 
@@ -217,6 +251,10 @@ function getStackBarDataChunk(data) {
       end = i;
       break;
     }
+  }
+
+  if (data[start][1] > this.slice.end) {
+    return [];
   }
 
   var prefix = [];
@@ -243,8 +281,8 @@ function drawArea(data, name) {
 
   data = getDataChunk.call(this, data);
 
-  this.svg.select("path.area.levelLine").datum(data).attr("d", this.area);
-  this.svg.select("path.line.levelLine").datum(data).attr("d", this.line);
+  this.svg.select("path.area." + name).datum(data).attr("d", this.area);
+  this.svg.select("path.line." + name).datum(data).attr("d", this.line);
 }
 
 function drawAxis() {
@@ -261,30 +299,26 @@ function drawUsageBars() {
 
     var x = 0;
     var y = this.height + 30 + (i * (this.stackbar.height + 4));
-    this.svg.append('rect')
-      .attr('width', this.width)
-      .attr('height', this.stackbar.height)
-      .attr('x', x)
-      .attr('y', y)
-      .attr('class', 'stackedbar');
-
-    this.svg.append("text")
-      .attr("x", -1 * (this.stackbar.height + 23))
-      .attr("y", y + 12)
-      .attr("dy", ".35em")
-      .attr('class', 'sb-text')
-      .text(usage.label);
-
 
     var rects = this.svg.selectAll("rect.sb-" + usage.id)
       .data(data)
+      .attr('x', function(d) {
+        return this.x(d[0]);
+      }.bind(this))
+      .attr('width', function(d) {
+        return this.x(d[1]) - this.x(d[0])
+      }.bind(this))
       .enter()
       .append("rect")
-      .attr('x', d => this.x(d[0]))
+      .attr('x', function(d) {
+        return this.x(d[0]);
+      }.bind(this))
+      .attr('width', function(d) {
+        return this.x(d[1]) - this.x(d[0])
+      }.bind(this))
       .attr('y', y)
-      .attr('width', d => this.x(d[1]) - this.x(d[0]))
       .attr('height', this.stackbar.height)
-      .attr('class', 'sb-' + usage.id);
+      .attr('class', ' sb-rect sb-' + usage.id);
 
   }, this);
 }
